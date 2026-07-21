@@ -23,26 +23,22 @@ import {
   STATUS_OPTIONS,
   STATUS_STYLES,
 } from "@/lib/sample-data";
+import {
+  countApplicationsByStatus,
+  createApplicationFromForm,
+  emptyApplicationForm,
+  filterApplications,
+  getApplicationMetrics,
+  parseStoredApplications,
+  STORAGE_KEY,
+  type ApplicationForm,
+  type FilterStatus,
+} from "@/lib/applications";
 import type {
   AiAssistantResult,
   ApplicationStatus,
   JobApplication,
 } from "@/types";
-
-const STORAGE_KEY = "ai-job-application-tracker:v1";
-
-const emptyForm = {
-  company: "",
-  role: "",
-  location: "Warsaw / Remote",
-  url: "",
-  status: "Saved" as ApplicationStatus,
-  deadline: "",
-  notes: "",
-};
-
-type ApplicationForm = typeof emptyForm;
-type FilterStatus = ApplicationStatus | "All";
 
 function formatDate(date: string) {
   if (!date) {
@@ -56,26 +52,32 @@ function formatDate(date: string) {
   }).format(new Date(date));
 }
 
-function statusCount(applications: JobApplication[], status: ApplicationStatus) {
-  return applications.filter((application) => application.status === status).length;
-}
-
 export default function Home() {
-  const [applications, setApplications] = useState<JobApplication[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [applications, setApplications] =
+    useState<JobApplication[]>(SAMPLE_APPLICATIONS);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    SAMPLE_APPLICATIONS[0]?.id ?? null,
+  );
   const [filter, setFilter] = useState<FilterStatus>("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [form, setForm] = useState<ApplicationForm>(emptyForm);
+  const [form, setForm] = useState<ApplicationForm>(emptyApplicationForm);
+  const [formError, setFormError] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<AiAssistantResult | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const storedApplications = window.localStorage.getItem(STORAGE_KEY);
-    const parsedApplications = storedApplications
-      ? (JSON.parse(storedApplications) as JobApplication[])
-      : SAMPLE_APPLICATIONS;
+    let parsedApplications = SAMPLE_APPLICATIONS;
+
+    try {
+      const storedApplications = window.localStorage.getItem(STORAGE_KEY);
+      parsedApplications = storedApplications
+        ? parseStoredApplications(storedApplications, SAMPLE_APPLICATIONS)
+        : SAMPLE_APPLICATIONS;
+    } catch {
+      parsedApplications = SAMPLE_APPLICATIONS;
+    }
 
     // localStorage is browser-only, so this sync happens after hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -86,26 +88,16 @@ export default function Home() {
 
   useEffect(() => {
     if (hasLoaded) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(applications));
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(applications));
+      } catch {
+        // Persisting can fail in private browsing or when storage is disabled.
+      }
     }
   }, [applications, hasLoaded]);
 
   const filteredApplications = useMemo(() => {
-    return applications.filter((application) => {
-      const matchesStatus = filter === "All" || application.status === filter;
-      const searchableText = [
-        application.company,
-        application.role,
-        application.location,
-        application.notes,
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return (
-        matchesStatus && searchableText.includes(searchQuery.trim().toLowerCase())
-      );
-    });
+    return filterApplications(applications, filter, searchQuery);
   }, [applications, filter, searchQuery]);
 
   const selectedApplication =
@@ -114,25 +106,27 @@ export default function Home() {
     applications[0] ??
     null;
 
+  const metrics = getApplicationMetrics(applications);
+
   const stats = [
     {
       label: "Total",
-      value: applications.length,
+      value: metrics.total,
       icon: BriefcaseBusiness,
     },
     {
-      label: "Applied",
-      value: statusCount(applications, "Applied"),
+      label: "Active",
+      value: metrics.active,
       icon: CheckCircle2,
     },
     {
-      label: "Assessment",
-      value: statusCount(applications, "Assessment"),
+      label: "Due soon",
+      value: metrics.dueSoon,
       icon: ClipboardCheck,
     },
     {
       label: "Interview",
-      value: statusCount(applications, "Interview"),
+      value: countApplicationsByStatus(applications, "Interview"),
       icon: CalendarClock,
     },
   ];
@@ -145,28 +139,27 @@ export default function Home() {
       ...currentForm,
       [field]: value,
     }));
+    setFormError(null);
   }
 
   function addApplication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const now = new Date().toISOString();
-    const application: JobApplication = {
+    const application = createApplicationFromForm(form, {
       id: crypto.randomUUID(),
-      company: form.company.trim(),
-      role: form.role.trim(),
-      location: form.location.trim(),
-      url: form.url.trim(),
-      status: form.status,
-      deadline: form.deadline,
-      notes: form.notes.trim(),
-      createdAt: now,
-      updatedAt: now,
-    };
+      now,
+    });
+
+    if (!application) {
+      setFormError("Company and role are required.");
+      return;
+    }
 
     setApplications((currentApplications) => [application, ...currentApplications]);
     setSelectedId(application.id);
-    setForm(emptyForm);
+    setForm(emptyApplicationForm);
+    setFormError(null);
     setAiResult(null);
     setAiError(null);
   }
@@ -200,6 +193,7 @@ export default function Home() {
     setSelectedId(SAMPLE_APPLICATIONS[0]?.id ?? null);
     setFilter("All");
     setSearchQuery("");
+    setFormError(null);
     setAiResult(null);
     setAiError(null);
   }
@@ -254,6 +248,13 @@ export default function Home() {
               Reset demo
             </button>
           </div>
+
+          {metrics.overdue > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+              {metrics.overdue} active application
+              {metrics.overdue === 1 ? " has" : "s have"} an overdue deadline.
+            </div>
+          )}
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat) => {
@@ -387,6 +388,12 @@ export default function Home() {
               <Plus className="h-4 w-4" />
               Add to tracker
             </button>
+
+            {formError && (
+              <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+                {formError}
+              </p>
+            )}
           </form>
         </aside>
 

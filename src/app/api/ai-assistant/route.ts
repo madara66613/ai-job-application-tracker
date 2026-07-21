@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createMockAiResult, generateOpenAiCompatibleResult } from "@/lib/ai";
+import { isJobApplication } from "@/lib/applications";
 import type { JobApplication } from "@/types";
 
 export async function POST(request: Request) {
@@ -9,7 +10,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as { application?: JobApplication };
     application = body.application;
 
-    if (!application?.company || !application.role) {
+    if (!isJobApplication(application)) {
       return NextResponse.json(
         { error: "Application company and role are required." },
         { status: 400 },

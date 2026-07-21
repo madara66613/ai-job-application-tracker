@@ -1,4 +1,4 @@
-import type { AiAssistantResult, JobApplication } from "@/types";
+import type { AiAssistantResult, AiResultSource, JobApplication } from "@/types";
 
 function splitNotes(notes: string) {
   return notes
@@ -34,6 +34,53 @@ export function createMockAiResult(
     ],
     source: "mock",
     generatedAt: new Date().toISOString(),
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeString(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function normalizeStringList(value: unknown, fallback: string[]) {
+  if (!Array.isArray(value)) {
+    return fallback;
+  }
+
+  const items = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+
+  return items.length > 0 ? items : fallback;
+}
+
+export function normalizeAiAssistantResult(
+  value: unknown,
+  application: JobApplication,
+  source: AiResultSource,
+  generatedAt = new Date().toISOString(),
+): AiAssistantResult {
+  const fallback = createMockAiResult(application);
+  const result = isRecord(value) ? value : {};
+
+  return {
+    recruiterMessage: normalizeString(
+      result.recruiterMessage,
+      fallback.recruiterMessage,
+    ),
+    requirements: normalizeStringList(result.requirements, fallback.requirements),
+    cvSkills: normalizeStringList(result.cvSkills, fallback.cvSkills),
+    interviewTasks: normalizeStringList(
+      result.interviewTasks,
+      fallback.interviewTasks,
+    ),
+    source,
+    generatedAt,
   };
 }
 
@@ -105,17 +152,7 @@ export async function generateOpenAiCompatibleResult(
     throw new Error("AI provider returned an unexpected response shape");
   }
 
-  const parsed = JSON.parse(rawContent) as Omit<
-    AiAssistantResult,
-    "source" | "generatedAt"
-  >;
+  const parsed = JSON.parse(rawContent);
 
-  return {
-    recruiterMessage: parsed.recruiterMessage,
-    requirements: parsed.requirements,
-    cvSkills: parsed.cvSkills,
-    interviewTasks: parsed.interviewTasks,
-    source: "openai-compatible",
-    generatedAt: new Date().toISOString(),
-  };
+  return normalizeAiAssistantResult(parsed, application, "openai-compatible");
 }

@@ -2,7 +2,7 @@
 
 ## Test Case 01: Add a new job application
 
-**Priority:** High  
+**Priority:** High
 **Area:** Application form
 
 ### Steps
@@ -33,7 +33,7 @@ The browser prevents submission because the company field is required.
 
 ## Test Case 03: Filter applications by status
 
-**Priority:** Medium  
+**Priority:** Medium
 **Area:** Status filter
 
 ### Steps
@@ -47,7 +47,7 @@ Only applications with the Applied status are visible.
 
 ## Test Case 04: Search applications
 
-**Priority:** Medium  
+**Priority:** Medium
 **Area:** Search
 
 ### Steps
@@ -61,7 +61,7 @@ Only applications containing `CRM` in company, role, location, or notes are visi
 
 ## Test Case 05: Change application status
 
-**Priority:** High  
+**Priority:** High
 **Area:** Application list
 
 ### Steps
@@ -116,3 +116,63 @@ The job URL opens in a new browser tab.
 ### Expected Result
 
 The list returns to the original demo applications.
+
+## Test Case 09: Reject whitespace-only required fields
+
+**Priority:** High
+**Area:** Application form
+
+### Steps
+
+1. Open the app.
+2. Enter only spaces in the company field.
+3. Fill in the role field.
+4. Click **Add to tracker**.
+
+### Expected Result
+
+The app shows a validation message and does not create an application with an empty company name.
+
+## Test Case 10: Recover from corrupted localStorage
+
+**Priority:** Medium
+**Area:** Persistence
+
+### Steps
+
+1. Open browser DevTools.
+2. Set `ai-job-application-tracker:v1` in localStorage to invalid JSON.
+3. Reload the app.
+
+### Expected Result
+
+The app loads demo data instead of showing a blank screen or framework error.
+
+## Test Case 11: Show due-soon deadline count
+
+**Priority:** Medium
+**Area:** Dashboard metrics
+
+### Steps
+
+1. Open the app with demo data.
+2. Review the top metric cards.
+
+### Expected Result
+
+The dashboard shows the number of active applications with deadlines in the next 7 days.
+
+## Test Case 12: AI output fallback shape
+
+**Priority:** High
+**Area:** AI assistant
+
+### Steps
+
+1. Configure an AI provider that returns partial or malformed JSON fields.
+2. Select an application.
+3. Click **Generate prep notes**.
+
+### Expected Result
+
+The app renders recruiter message, requirements, CV skills, and interview tasks without crashing. Missing list sections use safe fallback content.

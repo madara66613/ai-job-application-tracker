@@ -53,7 +53,7 @@ export const SAMPLE_APPLICATIONS: JobApplication[] = [
     location: "Warsaw / Remote",
     url: "https://example.com/blazity-junior-ai-engineer",
     status: "Assessment",
-    deadline: "2026-05-24",
+    deadline: "2026-07-24",
     notes:
       "Next.js, TypeScript, LLM workflows, prompt engineering, OpenAI/Anthropic APIs, AI-first product mindset.",
     createdAt: "2026-05-10T08:00:00.000Z",
@@ -66,7 +66,7 @@ export const SAMPLE_APPLICATIONS: JobApplication[] = [
     location: "Warsaw",
     url: "https://example.com/comscore-manual-tester",
     status: "Applied",
-    deadline: "2026-05-28",
+    deadline: "2026-07-29",
     notes:
       "Manual testing, test cases, bug reports, attention to detail, REST API basics, SDLC.",
     createdAt: "2026-05-11T10:15:00.000Z",
@@ -79,7 +79,7 @@ export const SAMPLE_APPLICATIONS: JobApplication[] = [
     location: "Remote Poland",
     url: "https://example.com/deloitte-marketing-automation",
     status: "Saved",
-    deadline: "2026-06-01",
+    deadline: "2026-08-05",
     notes:
       "CRM, Salesforce Marketing Cloud, Braze, business processes, segmentation, SQL basics, documentation.",
     createdAt: "2026-05-12T14:20:00.000Z",
