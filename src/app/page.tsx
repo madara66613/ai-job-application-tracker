@@ -6,6 +6,7 @@ import {
   CalendarClock,
   CheckCircle2,
   ClipboardCheck,
+  Download,
   FileText,
   Filter,
   LinkIcon,
@@ -16,8 +17,16 @@ import {
   Search,
   Sparkles,
   Trash2,
+  Upload,
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   SAMPLE_APPLICATIONS,
   STATUS_OPTIONS,
@@ -25,10 +34,12 @@ import {
 } from "@/lib/sample-data";
 import {
   countApplicationsByStatus,
+  createApplicationsBackup,
   createApplicationFromForm,
   emptyApplicationForm,
   filterApplications,
   getApplicationMetrics,
+  parseApplicationsBackup,
   parseStoredApplications,
   STORAGE_KEY,
   type ApplicationForm,
@@ -65,7 +76,12 @@ export default function Home() {
   const [aiResult, setAiResult] = useState<AiAssistantResult | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [dataMessage, setDataMessage] = useState<{
+    tone: "success" | "error";
+    text: string;
+  } | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let parsedApplications = SAMPLE_APPLICATIONS;
@@ -196,6 +212,64 @@ export default function Home() {
     setFormError(null);
     setAiResult(null);
     setAiError(null);
+    setDataMessage({
+      tone: "success",
+      text: "Demo applications restored.",
+    });
+  }
+
+  function exportApplications() {
+    const backup = createApplicationsBackup(applications);
+    const blob = new Blob([backup], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const date = new Date().toISOString().slice(0, 10);
+
+    link.href = url;
+    link.download = `job-applications-${date}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setDataMessage({
+      tone: "success",
+      text: `${applications.length} applications exported safely.`,
+    });
+  }
+
+  async function importApplications(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setDataMessage({
+        tone: "error",
+        text: "The backup is too large. Choose a JSON file under 2 MB.",
+      });
+      return;
+    }
+
+    const result = parseApplicationsBackup(await file.text());
+
+    if (!result.ok) {
+      setDataMessage({ tone: "error", text: result.error });
+      return;
+    }
+
+    setApplications(result.applications);
+    setSelectedId(result.applications[0]?.id ?? null);
+    setFilter("All");
+    setSearchQuery("");
+    setAiResult(null);
+    setAiError(null);
+    setDataMessage({
+      tone: "success",
+      text: `${result.applications.length} applications imported from backup.`,
+    });
   }
 
   async function generateAiNotes(application: JobApplication) {
@@ -239,15 +313,59 @@ export default function Home() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={resetDemoData}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Reset demo
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={exportApplications}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </button>
+              <button
+                type="button"
+                onClick={() => importInputRef.current?.click()}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+              >
+                <Upload className="h-4 w-4" />
+                Import
+              </button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={importApplications}
+                className="sr-only"
+                aria-label="Import application backup"
+              />
+              <button
+                type="button"
+                onClick={resetDemoData}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Reset
+              </button>
+            </div>
           </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <span>Local-first: your application data stays in this browser.</span>
+            <span>Versioned JSON backups | 2 MB import limit</span>
+          </div>
+
+          {dataMessage && (
+            <div
+              role="status"
+              className={`rounded-lg border px-4 py-3 text-sm font-medium ${
+                dataMessage.tone === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : "border-rose-200 bg-rose-50 text-rose-800"
+              }`}
+            >
+              {dataMessage.text}
+            </div>
+          )}
 
           {metrics.overdue > 0 && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">

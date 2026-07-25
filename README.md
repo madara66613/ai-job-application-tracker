@@ -4,12 +4,15 @@ A portfolio-ready mini CRM for tracking job applications, deadlines, recruiter n
 
 The project is intentionally small but practical: it shows product thinking, TypeScript discipline, client-side persistence, API route handling, resilient AI fallback behavior, automated tests, and manual QA documentation.
 
+![Application tracker dashboard](output/playwright/application-tracker-dashboard.png)
+
 ## Highlights
 
 - Add applications with company, role, location, URL, status, deadline, and notes.
 - Search and filter the pipeline by status, role, company, location, and notes.
 - Track useful metrics: total applications, active applications, due-soon deadlines, and interviews.
 - Persist data in versioned `localStorage` with safe fallback for corrupted or unavailable storage.
+- Export and restore versioned JSON backups with strict runtime validation and a 2 MB safety limit.
 - Generate AI preparation notes with either a real OpenAI-compatible provider or a mock fallback.
 - Normalize AI provider output before rendering it in the UI.
 - Include automated tests, manual QA cases, a bug report template, and GitHub Actions CI.
@@ -21,6 +24,7 @@ The project is intentionally small but practical: it shows product thinking, Typ
 - TypeScript
 - Tailwind CSS
 - Vitest
+- Oxlint
 - localStorage
 - OpenAI-compatible chat completions endpoint
 
@@ -96,12 +100,15 @@ src/
     applications.test.ts       Application utility tests
     sample-data.ts             Demo applications and status styles
   types.ts                     Shared TypeScript types
+output/playwright/
+  application-tracker-dashboard.png  Verified product screenshot
 ```
 
 ## Quality Notes
 
 - Whitespace-only company or role values are rejected before a card is created.
 - Corrupted `localStorage` data falls back to demo data instead of breaking the app.
+- Invalid, unsupported, or oversized backup files are rejected without replacing current data.
 - Failed AI provider calls fall back to mock output when a valid application is available.
 - `npm audit` currently reports zero known vulnerabilities after dependency fixes and a `postcss` override.
 
@@ -111,12 +118,11 @@ This project is useful for junior AI, QA, support, CRM, product, and automation 
 
 ## CV Description
 
-AI Job Application Tracker - built a Next.js and TypeScript mini CRM for managing job applications, deadlines, statuses, and recruiter notes. Added an AI assistant API route with mock fallback, runtime response normalization, localStorage resilience, unit tests, manual QA docs, and CI checks.
+AI Job Application Tracker - built a Next.js and TypeScript mini CRM for managing job applications, deadlines, statuses, and recruiter notes. Added versioned JSON import/export, strict runtime validation, an AI assistant API route with mock fallback, localStorage resilience, unit tests, manual QA docs, and CI checks.
 
-## Next Improvements
+## Recruiter Demo Flow
 
-- Publish a live demo and add the URL here.
-- Add one screenshot or short GIF to the README.
-- Add import/export for tracker data.
-- Add sorting by deadline and last update.
-- Replace demo job URLs with real public sample links or label them clearly as examples.
+1. Filter the pipeline by `Interview` and open an application.
+2. Change its status and reload the page to demonstrate persistence.
+3. Generate preparation notes to show the real/mock AI fallback.
+4. Export a JSON backup, reset the demo, and import the backup again.
