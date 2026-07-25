@@ -2,6 +2,18 @@ import { STATUS_OPTIONS } from "./sample-data";
 import type { ApplicationStatus, JobApplication } from "@/types";
 
 export const STORAGE_KEY = "ai-job-application-tracker:v1";
+export const BACKUP_VERSION = 1;
+
+export interface ApplicationsBackup {
+  app: "ai-job-application-tracker";
+  version: typeof BACKUP_VERSION;
+  exportedAt: string;
+  applications: JobApplication[];
+}
+
+export type BackupParseResult =
+  | { ok: true; applications: JobApplication[]; exportedAt: string }
+  | { ok: false; error: string };
 
 export const emptyApplicationForm = {
   company: "",
@@ -71,6 +83,63 @@ export function parseStoredApplications(
   } catch {
     return fallbackApplications;
   }
+}
+
+export function createApplicationsBackup(
+  applications: JobApplication[],
+  exportedAt = new Date().toISOString(),
+) {
+  const backup: ApplicationsBackup = {
+    app: "ai-job-application-tracker",
+    version: BACKUP_VERSION,
+    exportedAt,
+    applications,
+  };
+
+  return JSON.stringify(backup, null, 2);
+}
+
+export function parseApplicationsBackup(rawValue: string): BackupParseResult {
+  let parsedValue: unknown;
+
+  try {
+    parsedValue = JSON.parse(rawValue);
+  } catch {
+    return { ok: false, error: "This file is not valid JSON." };
+  }
+
+  if (!parsedValue || typeof parsedValue !== "object") {
+    return { ok: false, error: "This file is not a tracker backup." };
+  }
+
+  const backup = parsedValue as Record<string, unknown>;
+
+  if (
+    backup.app !== "ai-job-application-tracker" ||
+    backup.version !== BACKUP_VERSION
+  ) {
+    return {
+      ok: false,
+      error: "This backup format is not supported.",
+    };
+  }
+
+  if (
+    typeof backup.exportedAt !== "string" ||
+    !Array.isArray(backup.applications) ||
+    !backup.applications.every(isJobApplication)
+  ) {
+    return {
+      ok: false,
+      error: "The backup contains invalid application data.",
+    };
+  }
+
+  return {
+    ok: true,
+    applications: backup.applications,
+    exportedAt: backup.exportedAt,
+  };
 }
 
 export function createApplicationFromForm(

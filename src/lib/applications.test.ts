@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  createApplicationsBackup,
   createApplicationFromForm,
   emptyApplicationForm,
   filterApplications,
   getApplicationMetrics,
+  parseApplicationsBackup,
   parseStoredApplications,
 } from "./applications";
 import type { JobApplication } from "@/types";
@@ -65,6 +67,49 @@ describe("application utilities", () => {
     expect(parseStoredApplications("not json", [baseApplication])).toEqual([
       baseApplication,
     ]);
+  });
+
+  it("creates and restores a versioned application backup", () => {
+    const backup = createApplicationsBackup(
+      [baseApplication],
+      "2026-07-25T10:00:00.000Z",
+    );
+
+    expect(parseApplicationsBackup(backup)).toEqual({
+      ok: true,
+      applications: [baseApplication],
+      exportedAt: "2026-07-25T10:00:00.000Z",
+    });
+  });
+
+  it("rejects unsupported and partially corrupted backups", () => {
+    expect(
+      parseApplicationsBackup(
+        JSON.stringify({
+          app: "ai-job-application-tracker",
+          version: 99,
+          exportedAt: "2026-07-25T10:00:00.000Z",
+          applications: [baseApplication],
+        }),
+      ),
+    ).toEqual({
+      ok: false,
+      error: "This backup format is not supported.",
+    });
+
+    expect(
+      parseApplicationsBackup(
+        JSON.stringify({
+          app: "ai-job-application-tracker",
+          version: 1,
+          exportedAt: "2026-07-25T10:00:00.000Z",
+          applications: [{ ...baseApplication, status: "Unknown" }],
+        }),
+      ),
+    ).toEqual({
+      ok: false,
+      error: "The backup contains invalid application data.",
+    });
   });
 
   it("filters by status and searchable notes", () => {
