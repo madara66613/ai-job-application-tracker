@@ -1,27 +1,38 @@
-# GitHub Portfolio Plan
+# GitHub Portfolio Positioning
 
-## Recommended pinned repositories
+This document records the current portfolio structure. It replaces the earlier backlog of hypothetical repositories.
 
-1. `ai-job-application-tracker` - keep this as the main AI plus QA portfolio project. It shows Next.js, TypeScript, localStorage persistence, API-route AI integration, fallback handling, documentation, and tests.
-2. `qa-case-study-lab` - a small repository with manual test cases, bug reports, exploratory testing notes, and one automation smoke test for a public demo app.
-3. `api-automation-suite` - a REST API testing project with request collections, schema checks, negative cases, and CI-friendly test commands.
-4. `job-market-alert-bot` - a script or small web app that fetches job postings, filters them by role/location/keywords, and sends a digest.
-5. `portfolio-dashboard` - a polished React dashboard that presents projects, skills, contact links, and short case studies.
-6. `small-ai-tools` - a collection of focused AI utilities, such as CV bullet rewriting, recruiter-message drafting, and interview-question generation.
+## Recommended Pins
 
-## What every public project should include
+1. `qa-case-study-lab` — manual and risk-based QA case study with release decisions.
+2. `api-contract-testing-lab` — API contract testing, negative cases, mutation proof, and CI.
+3. `ai-job-application-tracker` — Next.js product workflow, local persistence, validation, and AI integration.
+4. `bug-bash-arena` — deployed interactive QA game and frontend engineering project.
+5. `ashen-vale-agentic-studio` — Unity/C# vertical slice in active development with documented AI assistance.
 
-- Clear README: problem, live demo, screenshots, tech stack, setup, scripts, and what you learned.
-- Working command set: `npm run lint`, `npm run test`, and `npm run build` or equivalent.
-- Evidence of quality: tests, QA docs, example bug reports, or CI.
-- Small product thinking: who the app is for, what workflow it improves, and what tradeoffs were made.
-- Clean repo hygiene: `.env.example`, `.gitignore`, no secrets, no generated build folders committed.
+## Distinct Portfolio Roles
 
-## Current project backlog
+| Repository | Primary evidence |
+| --- | --- |
+| `qa-case-study-lab` | Test design, defect analysis, release risk, Playwright, deployment |
+| `api-contract-testing-lab` | OpenAPI, contract validation, negative testing, mutation proof |
+| `ai-job-application-tracker` | Product thinking, Next.js, validation, persistence, AI fallback |
+| `bug-bash-arena` | Interactive frontend, accessible controls, deterministic game logic |
+| `ashen-vale-agentic-studio` | Unity gameplay architecture, milestone delivery, EditMode tests |
 
-- Add a live deployment URL after publishing.
-- Add one screenshot or short GIF to the README.
-- Add GitHub Actions for lint, tests, and build.
-- Add import/export for tracker data.
-- Add optional sorting by deadline and last updated date.
-- Replace example job URLs with real public sample URLs or clearly mark them as demo links.
+## Credibility Rules
+
+- Describe only features present in the repository.
+- Label seeded companies, defects, products, and evidence as fictional demo data.
+- Separate local/client persistence from database-backed services.
+- Separate Unity scene prototypes and pure domain logic from an integrated, packaged game.
+- Treat AI assistance as a documented development method, not as proof of completion.
+- Keep demo links, screenshots, setup commands, project status, limitations, and test instructions current.
+
+## Next Portfolio Improvements
+
+- Publish a safe mock-mode demo of the AI tracker.
+- Add a CLI report artifact or terminal recording to the API lab.
+- Link committed evidence assets to the QA case study.
+- Add a browser E2E smoke path to Bug Bash Arena.
+- Repair the Unity package/import blockers, integrate the quest/narrative domain into gameplay, create a build, and capture media.
